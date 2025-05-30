@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -25,6 +26,7 @@ export function CoffeeBeanList({
   selectable = false,
   selectedBeanId
 }: CoffeeBeanListProps) {
+  const isMobile = useIsMobile()
   if (beans.length === 0) {
     return (
       <motion.div
@@ -81,7 +83,7 @@ export function CoffeeBeanList({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className={`grid grid-cols-1 ${isMobile ? 'gap-4' : 'md:grid-cols-2 lg:grid-cols-3 gap-6'}`}>
       {beans.map((bean, index) => (
         <motion.div
           key={bean.id}
@@ -182,7 +184,7 @@ export function CoffeeBeanList({
 
               {/* Actions */}
               {!selectable && (
-                <div className="flex gap-2 pt-4 border-t border-stone-200">
+                <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'gap-2'} pt-4 border-t border-stone-200`}>
                   <Button
                     variant="outline"
                     size="sm"
@@ -202,9 +204,10 @@ export function CoffeeBeanList({
                       e.stopPropagation()
                       onDelete(bean.id)
                     }}
-                    className="border-red-300 text-red-600 hover:bg-red-50"
+                    className={`border-red-300 text-red-600 hover:bg-red-50 ${isMobile ? '' : 'w-auto'}`}
                   >
                     <Trash2 className="w-4 h-4" />
+                    {isMobile && <span className="ml-2">Delete</span>}
                   </Button>
                 </div>
               )}

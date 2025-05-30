@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { CoffeeBeanStorage } from "@/lib/coffee-bean-storage"
 import type { CoffeeBean } from "@/types/coffee-bean"
 import { motion } from "framer-motion"
@@ -25,6 +26,7 @@ interface RecipeFormProps {
 }
 
 export function RecipeForm({ onSave, onCancel, initialRecipe }: RecipeFormProps) {
+  const isMobile = useIsMobile()
   const [formData, setFormData] = useState({
     name: "",
     brewing_method: "pour_over" as BrewingMethod,
@@ -42,7 +44,7 @@ export function RecipeForm({ onSave, onCancel, initialRecipe }: RecipeFormProps)
     plunge_technique: "",
     pour_pattern: "",
     bloom_time_seconds: "",
-    rating: 0,
+    rating: null as number | null,
     tags: [] as string[],
     notes: "",
     roast_level: "" as "light" | "medium" | "dark" | "",
@@ -71,7 +73,7 @@ export function RecipeForm({ onSave, onCancel, initialRecipe }: RecipeFormProps)
         plunge_technique: initialRecipe.plunge_technique || "",
         pour_pattern: initialRecipe.pour_pattern || "",
         bloom_time_seconds: initialRecipe.bloom_time_seconds?.toString() || "",
-        rating: initialRecipe.rating,
+                  rating: initialRecipe.rating ?? null,
         tags: initialRecipe.tags,
         notes: initialRecipe.notes,
         roast_level: initialRecipe.roast_level || "",
@@ -105,21 +107,29 @@ export function RecipeForm({ onSave, onCancel, initialRecipe }: RecipeFormProps)
 
     // Validate required fields
     const requiredFields = {
-      name: formData.name,
-      bean_name: formData.bean_name,
+      name: formData.name.trim(),
+      bean_name: formData.bean_name.trim(),
       brewing_method: formData.brewing_method,
-      bean_quantity_g: formData.bean_quantity_g,
-      water_temp_c: formData.water_temp_c,
-      grind_setting: formData.grind_setting,
-      rating: formData.rating
+      bean_quantity_g: formData.bean_quantity_g.trim(),
+      water_temp_c: formData.water_temp_c.trim(),
+      grind_setting: formData.grind_setting.trim()
     }
 
     const missingFields = Object.entries(requiredFields)
-      .filter(([_, value]) => !value)
+      .filter(([_, value]) => !value || value === '')
       .map(([key]) => key)
 
     if (missingFields.length > 0) {
-      setSubmitError(`Missing required fields: ${missingFields.join(', ')}`)
+      const fieldNames = {
+        name: 'Recipe Name',
+        bean_name: 'Bean Name',
+        brewing_method: 'Brewing Method',
+        bean_quantity_g: 'Bean Quantity',
+        water_temp_c: 'Water Temperature',
+        grind_setting: 'Grind Setting'
+      }
+      const missingFieldNames = missingFields.map(field => fieldNames[field as keyof typeof fieldNames])
+      setSubmitError(`Please fill in the required fields: ${missingFieldNames.join(', ')}`)
       setIsSubmitting(false)
       return
     }
@@ -143,7 +153,7 @@ export function RecipeForm({ onSave, onCancel, initialRecipe }: RecipeFormProps)
       plunge_technique: formData.plunge_technique || undefined,
       pour_pattern: formData.pour_pattern || undefined,
       bloom_time_seconds: formData.bloom_time_seconds ? Number.parseInt(formData.bloom_time_seconds) : undefined,
-      rating: formData.rating,
+      rating: formData.rating ?? undefined,
       tags: formData.tags,
       notes: formData.notes,
       roast_level: formData.roast_level || undefined,
@@ -182,7 +192,7 @@ export function RecipeForm({ onSave, onCancel, initialRecipe }: RecipeFormProps)
         case "espresso":
           return (
             <>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="pressure_bar" className="text-stone-700">
                     Pressure (bar)
@@ -309,7 +319,14 @@ export function RecipeForm({ onSave, onCancel, initialRecipe }: RecipeFormProps)
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto">
       <Card className="bg-stone-50 border-stone-200 rounded-2xl shadow-sm">
         <CardHeader>
-          <CardTitle className="text-stone-800">Recipe Details</CardTitle>
+          <CardTitle className="text-stone-800">
+            Recipe Details
+            {initialRecipe && initialRecipe.name.includes('(Copy)') && (
+              <Badge variant="secondary" className="ml-2 bg-blue-100 text-blue-700 rounded-lg">
+                Duplicating Recipe
+              </Badge>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -339,43 +356,87 @@ export function RecipeForm({ onSave, onCancel, initialRecipe }: RecipeFormProps)
                   }
                   className="mt-2"
                 >
-                  <TabsList className="grid w-full grid-cols-5 bg-stone-200 rounded-xl">
-                    <TabsTrigger
-                      value="pour_over"
-                      className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-stone-800"
-                      aria-controls="method-fields"
-                    >
-                      Pour Over
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="espresso"
-                      className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-stone-800"
-                      aria-controls="method-fields"
-                    >
-                      Espresso
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="french_press"
-                      className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-stone-800"
-                      aria-controls="method-fields"
-                    >
-                      French Press
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="aeropress"
-                      className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-stone-800"
-                      aria-controls="method-fields"
-                    >
-                      AeroPress
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="v60"
-                      className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-stone-800"
-                      aria-controls="method-fields"
-                    >
-                      V60
-                    </TabsTrigger>
-                  </TabsList>
+                  {isMobile ? (
+                    <div className="space-y-2">
+                      <TabsList className="grid w-full grid-cols-3 gap-1 h-auto p-1 bg-stone-200 rounded-xl">
+                        <TabsTrigger
+                          value="pour_over"
+                          className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-stone-800 text-xs py-3 px-2"
+                          aria-controls="method-fields"
+                        >
+                          Pour Over
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="espresso"
+                          className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-stone-800 text-xs py-3 px-2"
+                          aria-controls="method-fields"
+                        >
+                          Espresso
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="v60"
+                          className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-stone-800 text-xs py-3 px-2"
+                          aria-controls="method-fields"
+                        >
+                          V60
+                        </TabsTrigger>
+                      </TabsList>
+                      <TabsList className="grid w-full grid-cols-2 gap-1 h-auto p-1 bg-stone-200 rounded-xl">
+                        <TabsTrigger
+                          value="french_press"
+                          className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-stone-800 text-xs py-3 px-2"
+                          aria-controls="method-fields"
+                        >
+                          French Press
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="aeropress"
+                          className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-stone-800 text-xs py-3 px-2"
+                          aria-controls="method-fields"
+                        >
+                          AeroPress
+                        </TabsTrigger>
+                      </TabsList>
+                    </div>
+                  ) : (
+                    <TabsList className="grid w-full grid-cols-5 bg-stone-200 rounded-xl">
+                      <TabsTrigger
+                        value="pour_over"
+                        className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-stone-800"
+                        aria-controls="method-fields"
+                      >
+                        Pour Over
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="espresso"
+                        className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-stone-800"
+                        aria-controls="method-fields"
+                      >
+                        Espresso
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="french_press"
+                        className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-stone-800"
+                        aria-controls="method-fields"
+                      >
+                        French Press
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="aeropress"
+                        className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-stone-800"
+                        aria-controls="method-fields"
+                      >
+                        AeroPress
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="v60"
+                        className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-stone-800"
+                        aria-controls="method-fields"
+                      >
+                        V60
+                      </TabsTrigger>
+                    </TabsList>
+                  )}
                 </Tabs>
               </div>
 
@@ -531,20 +592,20 @@ export function RecipeForm({ onSave, onCancel, initialRecipe }: RecipeFormProps)
 
               {/* Rating */}
               <div>
-                <Label className="text-stone-700">Rating</Label>
+                <Label className="text-stone-700">Rating (Optional)</Label>
                 <div className="flex gap-1 mt-2" role="radiogroup" aria-label="Recipe rating">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
                       type="button"
-                      onClick={() => setFormData((prev) => ({ ...prev, rating: star }))}
+                      onClick={() => setFormData((prev) => ({ ...prev, rating: star === prev.rating ? null : star }))}
                       className="p-1 rounded-lg hover:bg-stone-200 transition-colors"
                       role="radio"
                       aria-checked={star === formData.rating}
                       aria-label={`${star} star${star !== 1 ? "s" : ""}`}
                     >
                       <Star
-                        className={`w-6 h-6 ${star <= formData.rating ? "fill-amber-400 text-amber-400" : "text-stone-300"}`}
+                        className={`w-6 h-6 ${formData.rating != null && star <= formData.rating ? "fill-amber-400 text-amber-400" : "text-stone-300"}`}
                       />
                     </button>
                   ))}
@@ -614,7 +675,7 @@ export function RecipeForm({ onSave, onCancel, initialRecipe }: RecipeFormProps)
               </div>
             )}
 
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <Button 
                 type="submit" 
                 disabled={isSubmitting}

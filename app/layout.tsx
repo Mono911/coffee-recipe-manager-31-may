@@ -1,22 +1,23 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Brew Journal - Coffee Recipe Manager',
   description: 'Perfect your coffee craft with personalized recipes and brewing guidance',
   manifest: '/manifest.json',
-  themeColor: '#78716c',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'Brew Journal',
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#78716c',
 }
 
 export default function RootLayout({

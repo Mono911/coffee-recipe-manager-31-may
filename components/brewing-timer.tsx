@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -23,6 +24,7 @@ interface BrewingStep {
 }
 
 export function BrewingTimer({ recipe, onClose }: BrewingTimerProps) {
+  const isMobile = useIsMobile()
   const [steps, setSteps] = useState<BrewingStep[]>([])
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [timeRemaining, setTimeRemaining] = useState(0)
@@ -249,16 +251,16 @@ export function BrewingTimer({ recipe, onClose }: BrewingTimerProps) {
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="max-w-md mx-auto space-y-4"
+      className={`${isMobile ? 'max-w-sm px-4' : 'max-w-md'} mx-auto space-y-4`}
     >
       {/* Header */}
       <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 rounded-2xl shadow-sm">
         <CardHeader className="pb-3">
-          <div className="flex justify-between items-start">
+          <div className={`flex ${isMobile ? 'flex-col space-y-3' : 'justify-between items-start'}`}>
             <div>
-              <CardTitle className="text-xl text-stone-800">{recipe.name}</CardTitle>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant="outline" className="text-xs border-stone-300 text-stone-600">
+              <CardTitle className={`${isMobile ? 'text-lg' : 'text-xl'} text-stone-800`}>{recipe.name}</CardTitle>
+              <div className={`flex ${isMobile ? 'flex-col space-y-1' : 'items-center gap-2'} mt-1`}>
+                <Badge variant="outline" className="text-xs border-stone-300 text-stone-600 w-fit">
                   {recipe.brewing_method.replace('_', ' ')}
                 </Badge>
                 <span className="text-sm text-stone-600">Total: {formatTotalTime(totalElapsed)}</span>
@@ -267,7 +269,7 @@ export function BrewingTimer({ recipe, onClose }: BrewingTimerProps) {
             <Button
               variant="ghost"
               onClick={onClose}
-              className="text-stone-600 hover:text-stone-800"
+              className={`text-stone-600 hover:text-stone-800 ${isMobile ? 'self-end -mt-8' : ''}`}
             >
               ✕
             </Button>
@@ -297,16 +299,16 @@ export function BrewingTimer({ recipe, onClose }: BrewingTimerProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <div className="text-4xl font-mono font-bold text-amber-600">
+                  <div className={`${isMobile ? 'text-3xl' : 'text-4xl'} font-mono font-bold text-amber-600`}>
                     {formatTime(timeRemaining)}
                   </div>
                   <Progress value={progress} className="h-2" />
                 </div>
 
-                <div className="flex justify-center gap-3">
+                <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'justify-center gap-3'}`}>
                   <Button
                     onClick={toggleTimer}
-                    className={`rounded-xl px-6 py-3 ${
+                    className={`rounded-xl ${isMobile ? 'py-3' : 'px-6 py-3'} ${
                       isRunning 
                         ? "bg-orange-600 hover:bg-orange-700" 
                         : "bg-green-600 hover:bg-green-700"
@@ -327,7 +329,7 @@ export function BrewingTimer({ recipe, onClose }: BrewingTimerProps) {
                   <Button
                     variant="outline"
                     onClick={resetTimer}
-                    className="rounded-xl border-stone-300"
+                    className={`rounded-xl border-stone-300 ${isMobile ? 'py-3' : ''}`}
                   >
                     <RotateCcw className="w-4 h-4 mr-2" />
                     Reset

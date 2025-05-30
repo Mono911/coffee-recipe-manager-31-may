@@ -79,7 +79,7 @@ export class RecipeStorage {
     }
     
     // Validate required fields
-    if (!recipe.name || !recipe.bean_name || !recipe.brewing_method || !recipe.bean_quantity_g || !recipe.water_temp_c || !recipe.grind_setting || typeof recipe.rating !== 'number') {
+    if (!recipe.name || !recipe.bean_name || !recipe.brewing_method || !recipe.bean_quantity_g || !recipe.water_temp_c || !recipe.grind_setting) {
       throw new Error('Missing required fields for recipe')
     }
     
@@ -100,10 +100,14 @@ export class RecipeStorage {
     console.log('💾 Saved to localStorage, attempting Supabase save...')
 
     try {
-      // Clean the recipe data for Supabase (remove undefined values)
-      const cleanRecipe = Object.fromEntries(
-        Object.entries(recipe).filter(([_, value]) => value !== undefined)
-      )
+      // Clean the recipe data for Supabase and ensure required fields
+      const cleanRecipe = {
+        ...Object.fromEntries(
+          Object.entries(recipe).filter(([_, value]) => value !== undefined)
+        ),
+        // Ensure rating has a default value of 0 if null/undefined
+        rating: recipe.rating ?? 0
+      }
       
       console.log('📤 Sending to Supabase (cleaned):', cleanRecipe)
       

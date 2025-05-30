@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card"
 import { Search, Filter, Star, X, Coffee, Clock } from "lucide-react"
 import type { Recipe, BrewingMethod } from "@/types/recipe"
+import type { CoffeeBean } from "@/types/coffee-bean"
+import { CoffeeBeanStorage } from "@/lib/coffee-bean-storage"
 
 interface RecipeSearchProps {
   recipes: Recipe[]
@@ -21,12 +23,24 @@ export function RecipeSearch({ recipes, onFilteredRecipes, onQuickBrew }: Recipe
   const [methodFilter, setMethodFilter] = useState<BrewingMethod | "all">("all")
   const [ratingFilter, setRatingFilter] = useState<number | "all">("all")
   const [roastFilter, setRoastFilter] = useState<"light" | "medium" | "dark" | "all">("all")
+  const [beanFilter, setBeanFilter] = useState<string | "all">("all")
   const [showFilters, setShowFilters] = useState(false)
   const [recentlyBrewed, setRecentlyBrewed] = useState<string[]>([])
   const [isClientMounted, setIsClientMounted] = useState(false)
+  const [coffeeBeans, setCoffeeBeans] = useState<CoffeeBean[]>([])
 
   useEffect(() => {
     setIsClientMounted(true)
+    // Load coffee beans
+    const loadBeans = async () => {
+      try {
+        const beans = await CoffeeBeanStorage.getBeans()
+        setCoffeeBeans(beans)
+      } catch (error) {
+        console.error('Failed to load coffee beans:', error)
+      }
+    }
+    loadBeans()
   }, [])
 
   // Get recently brewed recipes from localStorage
@@ -61,7 +75,7 @@ export function RecipeSearch({ recipes, onFilteredRecipes, onQuickBrew }: Recipe
 
     // Rating filter
     if (ratingFilter !== "all") {
-      filtered = filtered.filter(recipe => recipe.rating >= ratingFilter)
+      filtered = filtered.filter(recipe => recipe.rating !== undefined && recipe.rating >= ratingFilter)
     }
 
     // Roast filter
@@ -69,21 +83,27 @@ export function RecipeSearch({ recipes, onFilteredRecipes, onQuickBrew }: Recipe
       filtered = filtered.filter(recipe => recipe.roast_level === roastFilter)
     }
 
+    // Bean filter
+    if (beanFilter !== "all") {
+      filtered = filtered.filter(recipe => recipe.bean_name === beanFilter)
+    }
+
     onFilteredRecipes(filtered)
-  }, [searchQuery, methodFilter, ratingFilter, roastFilter, recipes, onFilteredRecipes])
+  }, [searchQuery, methodFilter, ratingFilter, roastFilter, beanFilter, recipes])
 
   const clearFilters = () => {
     setSearchQuery("")
     setMethodFilter("all")
     setRatingFilter("all")
     setRoastFilter("all")
+    setBeanFilter("all")
     setShowFilters(false)
   }
 
-  const hasActiveFilters = searchQuery || methodFilter !== "all" || ratingFilter !== "all" || roastFilter !== "all"
+  const hasActiveFilters = searchQuery || methodFilter !== "all" || ratingFilter !== "all" || roastFilter !== "all" || beanFilter !== "all"
 
   // Get favorite recipes (4-5 star ratings)
-  const favoriteRecipes = recipes.filter(recipe => recipe.rating >= 4).slice(0, 3)
+  const favoriteRecipes = recipes.filter(recipe => recipe.rating && recipe.rating >= 4).slice(0, 3)
 
   // Get recently brewed recipes
   const recentRecipes = recipes
@@ -147,7 +167,7 @@ export function RecipeSearch({ recipes, onFilteredRecipes, onQuickBrew }: Recipe
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4"
+              className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
             >
               <div>
                 <label className="text-sm font-medium text-stone-700 mb-2 block">
@@ -199,6 +219,25 @@ export function RecipeSearch({ recipes, onFilteredRecipes, onQuickBrew }: Recipe
                     <SelectItem value="light">Light</SelectItem>
                     <SelectItem value="medium">Medium</SelectItem>
                     <SelectItem value="dark">Dark</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-stone-700 mb-2 block">
+                  Coffee Bean
+                </label>
+                <Select value={beanFilter} onValueChange={(value) => setBeanFilter(value)}>
+                  <SelectTrigger className="rounded-xl border-stone-300">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Beans</SelectItem>
+                    {coffeeBeans.map((bean) => (
+                      <SelectItem key={bean.id} value={bean.name}>
+                        {bean.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -305,6 +344,11 @@ export function RecipeSearch({ recipes, onFilteredRecipes, onQuickBrew }: Recipe
           {roastFilter !== "all" && (
             <Badge variant="secondary" className="bg-stone-200 text-stone-700 rounded-lg">
               Roast: {roastFilter}
+            </Badge>
+          )}
+          {beanFilter !== "all" && (
+            <Badge variant="secondary" className="bg-stone-200 text-stone-700 rounded-lg">
+              Bean: {beanFilter}
             </Badge>
           )}
         </div>

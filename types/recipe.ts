@@ -25,7 +25,7 @@ export interface Recipe {
   pour_pattern?: string
   bloom_time_seconds?: number
 
-  rating: number
+  rating?: number
   tags: string[]
   notes: string
   roast_level?: "light" | "medium" | "dark"
@@ -42,7 +42,7 @@ export interface LegacyRecipe {
   beanQuantityG: number
   waterTempC: number
   grindSetting: string
-  rating: number
+  rating?: number
   brewTimeSeconds?: number
   waterRatio?: string
   roastLevel?: 'light' | 'medium' | 'dark'

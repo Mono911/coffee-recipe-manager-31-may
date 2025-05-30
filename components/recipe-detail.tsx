@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -16,6 +17,7 @@ interface RecipeDetailProps {
 }
 
 export function RecipeDetail({ recipe, onEdit, onDelete, onBrew }: RecipeDetailProps) {
+  const isMobile = useIsMobile()
   const formatBrewingMethod = (method: string) => {
     return method
       .split("_")
@@ -99,14 +101,14 @@ export function RecipeDetail({ recipe, onEdit, onDelete, onBrew }: RecipeDetailP
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto space-y-6">
       <Card className="bg-stone-50 border-stone-200 rounded-2xl shadow-sm">
         <CardHeader>
-          <div className="flex justify-between items-start">
+          <div className={`flex ${isMobile ? 'flex-col space-y-4' : 'justify-between items-start'}`}>
             <div>
-              <CardTitle className="text-2xl text-stone-800 mb-2">{recipe.name}</CardTitle>
+              <CardTitle className={`${isMobile ? 'text-xl' : 'text-2xl'} text-stone-800 mb-2`}>{recipe.name}</CardTitle>
               <Badge variant="outline" className="text-sm border-stone-300 text-stone-600 rounded-lg">
                 {formatBrewingMethod(recipe.brewing_method)}
               </Badge>
             </div>
-            <div className="flex gap-2">
+            <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'gap-2'}`}>
               {onBrew && (
                 <Button
                   onClick={onBrew}
@@ -114,7 +116,7 @@ export function RecipeDetail({ recipe, onEdit, onDelete, onBrew }: RecipeDetailP
                   aria-label={`Start brewing ${recipe.name}`}
                 >
                   <Coffee className="w-4 h-4 mr-2" />
-                  Brew Now
+                  {isMobile ? 'Brew' : 'Brew Now'}
                 </Button>
               )}
               <Button
@@ -141,15 +143,20 @@ export function RecipeDetail({ recipe, onEdit, onDelete, onBrew }: RecipeDetailP
         <CardContent className="space-y-6">
           {/* Rating */}
           <div className="flex items-center gap-2">
-            <div className="flex" role="img" aria-label={`Rating: ${recipe.rating} out of 5 stars`}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star
-                  key={star}
-                  className={`w-5 h-5 ${star <= recipe.rating ? "fill-amber-400 text-amber-400" : "text-stone-300"}`}
-                />
-              ))}
+            <div className="flex" role="img" aria-label={recipe.rating !== undefined ? `Rating: ${recipe.rating} out of 5 stars` : "Not rated"}>
+              {[1, 2, 3, 4, 5].map((star) => {
+                const isFilled = recipe.rating !== undefined && star <= recipe.rating;
+                return (
+                  <Star
+                    key={star}
+                    className={`w-5 h-5 ${isFilled ? "fill-amber-400 text-amber-400" : "text-stone-300"}`}
+                  />
+                );
+              })}
             </div>
-            <span className="text-sm text-stone-600">({recipe.rating}/5)</span>
+            <span className="text-sm text-stone-600">
+              {recipe.rating !== undefined ? `(${recipe.rating}/5)` : "(Not rated)"}
+            </span>
           </div>
 
           <Separator className="bg-stone-200" />
@@ -160,7 +167,7 @@ export function RecipeDetail({ recipe, onEdit, onDelete, onBrew }: RecipeDetailP
               <Coffee className="w-5 h-5" />
               Bean Information
             </h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <div className="text-sm font-medium text-stone-800">Bean Name</div>
                 <div className="text-stone-600">{recipe.bean_name}</div>
@@ -190,7 +197,7 @@ export function RecipeDetail({ recipe, onEdit, onDelete, onBrew }: RecipeDetailP
               <Droplets className="w-5 h-5" />
               Brewing Parameters
             </h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <div className="text-sm font-medium text-stone-800">Water Temperature</div>
                 <div className="text-stone-600 flex items-center gap-1">

@@ -1,8 +1,19 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Plus, Coffee } from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
+import { Plus, Coffee, Menu, X, ArrowLeft, Copy } from "lucide-react"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { RecipeForm } from "@/components/recipe-form"
 import { RecipeList } from "@/components/recipe-list"
 import { RecipeDetail } from "@/components/recipe-detail"
@@ -24,6 +35,9 @@ export default function CoffeeRecipeManager() {
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null)
   const [brewingRecipe, setBrewingRecipe] = useState<Recipe | null>(null)
   const [editingBean, setEditingBean] = useState<CoffeeBean | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [recipeToDelete, setRecipeToDelete] = useState<Recipe | null>(null)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     const loadData = async () => {
@@ -54,9 +68,11 @@ export default function CoffeeRecipeManager() {
       console.log('Saving recipe:', recipe)
       let savedRecipe: Recipe
       
-      if (editingRecipe) {
+      // Check if we're editing an existing recipe (has a valid ID)
+      if (editingRecipe && editingRecipe.id && editingRecipe.id.trim() !== '') {
         savedRecipe = await RecipeStorage.updateRecipe(editingRecipe.id, recipe) || editingRecipe
       } else {
+        // Create new recipe (including duplicated recipes with empty IDs)
         savedRecipe = await RecipeStorage.saveRecipe(recipe)
       }
       
@@ -74,14 +90,26 @@ export default function CoffeeRecipeManager() {
     }
   }
 
-  const handleDeleteRecipe = async (id: string) => {
+  const handleDeleteRecipe = (id: string) => {
+    const recipe = recipes.find(r => r.id === id)
+    if (recipe) {
+      setRecipeToDelete(recipe)
+      setDeleteDialogOpen(true)
+    }
+  }
+
+  const confirmDeleteRecipe = async () => {
+    if (!recipeToDelete) return
+    
     try {
-      await RecipeStorage.deleteRecipe(id)
+      await RecipeStorage.deleteRecipe(recipeToDelete.id)
       const updatedRecipes = await RecipeStorage.getRecipes()
       setRecipes(updatedRecipes)
       setFilteredRecipes(updatedRecipes)
       setCurrentView("list")
       setSelectedRecipe(null)
+      setDeleteDialogOpen(false)
+      setRecipeToDelete(null)
     } catch (error) {
       console.error('Failed to delete recipe:', error)
       alert(`Failed to delete recipe: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -103,9 +131,9 @@ export default function CoffeeRecipeManager() {
     setCurrentView("brewing")
   }
 
-  const handleFilteredRecipes = (filtered: Recipe[]) => {
+  const handleFilteredRecipes = useCallback((filtered: Recipe[]) => {
     setFilteredRecipes(filtered)
-  }
+  }, [])
 
   const getCoffeeBeans = async (): Promise<CoffeeBean[]> => {
     return await CoffeeBeanStorage.getBeans()
@@ -161,40 +189,73 @@ export default function CoffeeRecipeManager() {
     setCurrentView("create-bean")
   }
 
+  const handleDuplicateRecipe = (recipe: Recipe) => {
+    // Create a copy of the recipe without id and timestamps
+    const duplicatedRecipe: Recipe = {
+      id: '', // Will be generated when saved
+      name: `${recipe.name} (Copy)`,
+      bean_name: recipe.bean_name,
+      bean_quantity_g: recipe.bean_quantity_g,
+      water_temp_c: recipe.water_temp_c,
+      grind_setting: recipe.grind_setting,
+      brewing_method: recipe.brewing_method,
+      brew_time_seconds: recipe.brew_time_seconds,
+      water_ratio: recipe.water_ratio,
+      pressure_bar: recipe.pressure_bar,
+      shot_time_seconds: recipe.shot_time_seconds,
+      tamping_pressure: recipe.tamping_pressure,
+      steeping_time_seconds: recipe.steeping_time_seconds,
+      plunge_technique: recipe.plunge_technique,
+      pour_pattern: recipe.pour_pattern,
+      bloom_time_seconds: recipe.bloom_time_seconds,
+      rating: recipe.rating,
+      notes: recipe.notes,
+      tags: [...recipe.tags], // Create a new array copy
+      roast_level: recipe.roast_level,
+      coffee_bean_id: recipe.coffee_bean_id,
+      created_at: '', // Will be set when saved
+      updated_at: '' // Will be set when saved
+    }
+    
+    // Set this as the editing recipe and switch to create view
+    setEditingRecipe(duplicatedRecipe)
+    setCurrentView("create")
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-stone-50 via-amber-50 to-emerald-50">
-      <div className="max-w-6xl mx-auto p-6">
-        <header className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-stone-800 mb-3 font-rounded">☕ Brew Journal</h1>
-          <p className="text-stone-600 text-lg">Perfect your craft, one cup at a time</p>
+      <div className="max-w-6xl mx-auto p-4 sm:p-6">
+        <header className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-4xl font-bold text-stone-800 mb-2 sm:mb-3 font-rounded">☕ Brew Journal</h1>
+          <p className="text-stone-600 text-sm sm:text-lg">Perfect your craft, one cup at a time</p>
         </header>
         
         <>
             {currentView === "list" && (
               <div
               key="list"
-              className="space-y-8"
+              className="space-y-6 sm:space-y-8"
             >
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-semibold text-stone-800">Your Recipes</h2>
-                <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h2 className="text-xl sm:text-2xl font-semibold text-stone-800">Your Recipes</h2>
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                   <Button
                     onClick={() => setCurrentView("beans")}
                     variant="outline"
-                    className="border-stone-300 hover:bg-stone-100 rounded-xl px-6 py-3 shadow-sm hover:shadow-md transition-all"
+                    className="border-stone-300 hover:bg-stone-100 rounded-xl px-4 sm:px-6 py-2 sm:py-3 shadow-sm hover:shadow-md transition-all text-sm sm:text-base"
                   >
                     <Coffee className="w-4 h-4 mr-2" />
-                    Manage Beans
+                    {isMobile ? "Beans" : "Manage Beans"}
                   </Button>
                   <Button
                     onClick={() => {
                       setEditingRecipe(null)
                       setCurrentView("create")
                     }}
-                    className="bg-stone-700 hover:bg-stone-800 text-white rounded-xl px-6 py-3 shadow-sm hover:shadow-md transition-all"
+                    className="bg-stone-700 hover:bg-stone-800 text-white rounded-xl px-4 sm:px-6 py-2 sm:py-3 shadow-sm hover:shadow-md transition-all text-sm sm:text-base"
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    New Recipe
+                    {isMobile ? "New" : "New Recipe"}
                   </Button>
                 </div>
               </div>
@@ -208,6 +269,7 @@ export default function CoffeeRecipeManager() {
                 onViewRecipe={handleViewRecipe}
                 onEditRecipe={handleEditRecipe}
                 onDeleteRecipe={handleDeleteRecipe}
+                onDuplicateRecipe={handleDuplicateRecipe}
                 onBrewRecipe={handleBrewRecipe}
               />
             </div>
@@ -216,20 +278,21 @@ export default function CoffeeRecipeManager() {
           {currentView === "create" && (
             <div
               key="create"
-              className="space-y-6"
+              className="space-y-4 sm:space-y-6"
             >
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <Button
                   variant="ghost"
                   onClick={() => {
                     setCurrentView("list")
                     setEditingRecipe(null)
                   }}
-                  className="text-stone-600 hover:text-stone-800 hover:bg-stone-100 rounded-xl"
+                  className="text-stone-600 hover:text-stone-800 hover:bg-stone-100 rounded-xl self-start"
                 >
-                  ← Back to Recipes
+                  <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
+                  {isMobile ? "Back" : "Back to Recipes"}
                 </Button>
-                <h2 className="text-2xl font-semibold text-stone-800">
+                <h2 className="text-xl sm:text-2xl font-semibold text-stone-800">
                   {editingRecipe ? "Edit Recipe" : "Create New Recipe"}
                 </h2>
               </div>
@@ -247,14 +310,15 @@ export default function CoffeeRecipeManager() {
           {currentView === "detail" && selectedRecipe && (
             <div
               key="detail"
-              className="space-y-6"
+              className="space-y-4 sm:space-y-6"
             >
               <Button
                 variant="ghost"
                 onClick={() => setCurrentView("list")}
                 className="text-stone-600 hover:text-stone-800 hover:bg-stone-100 rounded-xl"
               >
-                ← Back to Recipes
+                <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
+                {isMobile ? "Back" : "Back to Recipes"}
               </Button>
               <RecipeDetail
                 recipe={selectedRecipe}
@@ -268,14 +332,15 @@ export default function CoffeeRecipeManager() {
           {currentView === "brewing" && brewingRecipe && (
             <div
               key="brewing"
-              className="space-y-6"
+              className="space-y-4 sm:space-y-6"
             >
               <Button
                 variant="ghost"
                 onClick={() => setCurrentView("list")}
                 className="text-stone-600 hover:text-stone-800 hover:bg-stone-100 rounded-xl"
               >
-                ← Back to Recipes
+                <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
+                {isMobile ? "Back" : "Back to Recipes"}
               </Button>
               <BrewingTimer
                 recipe={brewingRecipe}
@@ -287,25 +352,26 @@ export default function CoffeeRecipeManager() {
           {currentView === "beans" && (
             <div
               key="beans"
-              className="space-y-8"
+              className="space-y-6 sm:space-y-8"
             >
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                   <Button
                     variant="ghost"
                     onClick={() => setCurrentView("list")}
-                    className="text-stone-600 hover:text-stone-800 hover:bg-stone-100 rounded-xl"
+                    className="text-stone-600 hover:text-stone-800 hover:bg-stone-100 rounded-xl self-start"
                   >
-                    ← Back to Recipes
+                    <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
+                    {isMobile ? "Back" : "Back to Recipes"}
                   </Button>
-                  <h2 className="text-2xl font-semibold text-stone-800">Coffee Bean Inventory</h2>
+                  <h2 className="text-xl sm:text-2xl font-semibold text-stone-800">{isMobile ? "Bean Inventory" : "Coffee Bean Inventory"}</h2>
                 </div>
                 <Button
                   onClick={() => {
                     setEditingBean(null)
                     setCurrentView("create-bean")
                   }}
-                  className="bg-stone-700 hover:bg-stone-800 text-white rounded-xl px-6 py-3 shadow-sm hover:shadow-md transition-all"
+                  className="bg-stone-700 hover:bg-stone-800 text-white rounded-xl px-4 sm:px-6 py-2 sm:py-3 shadow-sm hover:shadow-md transition-all self-start text-sm sm:text-base"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Bean
@@ -322,21 +388,22 @@ export default function CoffeeRecipeManager() {
             {currentView === "create-bean" && (
               <div
                 key="create-bean"
-                className="space-y-6"
+                className="space-y-4 sm:space-y-6"
               >
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                   <Button
                     variant="ghost"
                     onClick={() => {
                       setCurrentView("beans")
                       setEditingBean(null)
                     }}
-                    className="text-stone-600 hover:text-stone-800 hover:bg-stone-100 rounded-xl"
+                    className="text-stone-600 hover:text-stone-800 hover:bg-stone-100 rounded-xl self-start"
                   >
-                    ← Back to Beans
+                    <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
+                    {isMobile ? "Back" : "Back to Beans"}
                   </Button>
-                  <h2 className="text-2xl font-semibold text-stone-800">
-                    {editingBean ? "Edit Coffee Bean" : "Add New Coffee Bean"}
+                  <h2 className="text-xl sm:text-2xl font-semibold text-stone-800">
+                    {editingBean ? (isMobile ? "Edit Bean" : "Edit Coffee Bean") : (isMobile ? "Add Bean" : "Add New Coffee Bean")}
                   </h2>
                 </div>
                 <CoffeeBeanForm
@@ -351,6 +418,34 @@ export default function CoffeeRecipeManager() {
             )}
         </>
       </div>
+      
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent className="bg-white rounded-2xl border-stone-200">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-stone-800">Delete Recipe</AlertDialogTitle>
+            <AlertDialogDescription className="text-stone-600">
+              Are you sure you want to delete "{recipeToDelete?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              onClick={() => {
+                setDeleteDialogOpen(false)
+                setRecipeToDelete(null)
+              }}
+              className="rounded-xl"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteRecipe}
+              className="bg-red-600 hover:bg-red-700 text-white rounded-xl"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

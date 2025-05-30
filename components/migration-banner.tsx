@@ -6,8 +6,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { X, Upload, CheckCircle, AlertCircle } from "lucide-react"
 import { RecipeStorage } from "@/lib/recipe-storage"
 import { supabase } from "@/lib/supabase"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 export function MigrationBanner() {
+  const isMobile = useIsMobile()
   const [showBanner, setShowBanner] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
@@ -68,7 +70,7 @@ export function MigrationBanner() {
   return (
     <Alert className="mb-4 border-blue-200 bg-blue-50">
       <Upload className="h-4 w-4" />
-      <AlertDescription className="flex items-center justify-between w-full">
+      <AlertDescription className={`${isMobile ? 'block space-y-3' : 'flex items-center justify-between'} w-full`}>
         <div className="flex-1">
           {migrationResult ? (
             <div className="flex items-center gap-2">
@@ -89,14 +91,14 @@ export function MigrationBanner() {
               )}
             </div>
           ) : (
-            <span>
+            <span className={isMobile ? 'text-sm' : ''}>
               We found existing recipes on this device. Would you like to sync them to the cloud 
               for access across all your devices?
             </span>
           )}
         </div>
         
-        <div className="flex items-center gap-2 ml-4">
+        <div className={`flex ${isMobile ? 'justify-end space-x-2 pt-2' : 'items-center gap-2 ml-4'}`}>
           {!migrationResult && (
             <>
               <Button
@@ -104,6 +106,7 @@ export function MigrationBanner() {
                 size="sm"
                 onClick={handleMigrate}
                 disabled={isLoading}
+                className={isMobile ? 'text-xs px-3' : ''}
               >
                 {isLoading ? "Syncing..." : "Sync to Cloud"}
               </Button>
@@ -111,6 +114,7 @@ export function MigrationBanner() {
                 variant="ghost"
                 size="sm"
                 onClick={handleDismiss}
+                className={isMobile ? 'px-2' : ''}
               >
                 <X className="h-4 w-4" />
               </Button>
