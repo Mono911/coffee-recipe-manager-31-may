@@ -1,18 +1,22 @@
 export interface CoffeeBean {
   id: string
   name: string
-  processing: 'natural' | 'washed' | 'honey' | 'anaerobic' | 'other'
   origin: string
   roast: 'light' | 'medium-light' | 'medium' | 'medium-dark' | 'dark'
-  type: 'single-origin' | 'blend'
-  flavor_notes: string[]
-  acidity: 'low' | 'medium-low' | 'medium' | 'medium-high' | 'high'
-  notes?: string
+  processing_method?: string
+  farm?: string
+  altitude_m?: number
+  variety?: string
+  flavor_notes?: string[]
+  purchase_date?: string
   roast_date?: string
-  quantity?: number
-  quantity_unit?: 'g' | 'kg' | 'lbs' | 'oz'
-  price?: number
+  quantity_g?: number
+  quantity_unit?: string
+  price_per_kg?: number
   currency?: string
+  notes?: string
+  acidity?: 'low' | 'medium-low' | 'medium' | 'medium-high' | 'high'
+  type?: 'single-origin' | 'blend'
   supplier?: string
   created_at: string
   updated_at: string

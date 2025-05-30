@@ -13,10 +13,7 @@ export class CoffeeBeanStorage {
 
       if (error) throw error
       
-      return (data || []).map(bean => ({
-        ...bean,
-        processing: bean.processing_method
-      }))
+      return data || []
     } catch (error) {
       console.warn('Failed to fetch from Supabase, falling back to localStorage:', error)
       return this.getLocalBeans()
@@ -50,8 +47,7 @@ export class CoffeeBeanStorage {
     const insertData: Record<string, any> = {}
     Object.entries(bean).forEach(([key, value]) => {
       if (value !== undefined) {
-        const dbKey = key === 'processing' ? 'processing_method' : key
-        insertData[dbKey] = key.endsWith('_date') && value === '' ? null : value
+        insertData[key] = key.endsWith('_date') && value === '' ? null : value
       }
     })
 

@@ -13,6 +13,7 @@ interface CoffeeBeanListProps {
   beans: CoffeeBean[]
   onEdit: (bean: CoffeeBean) => void
   onDelete: (id: string) => void
+  onView?: (bean: CoffeeBean) => void
   onSelect?: (bean: CoffeeBean) => void
   selectable?: boolean
   selectedBeanId?: string
@@ -22,6 +23,7 @@ export function CoffeeBeanList({
   beans, 
   onEdit, 
   onDelete, 
+  onView,
   onSelect,
   selectable = false,
   selectedBeanId
@@ -50,7 +52,7 @@ export function CoffeeBeanList({
     }
   }
 
-  const getProcessingColor = (processing: string) => {
+  const getProcessingColor = (processing?: string) => {
     switch (processing) {
       case 'natural': return 'bg-amber-100 text-amber-800'
       case 'washed': return 'bg-blue-100 text-blue-800'
@@ -71,7 +73,7 @@ export function CoffeeBeanList({
     }
   }
 
-  const getAcidityColor = (acidity: string) => {
+  const getAcidityColor = (acidity?: string) => {
     switch (acidity) {
       case 'low': return 'bg-green-100 text-green-800'
       case 'medium-low': return 'bg-green-200 text-green-900'
@@ -97,7 +99,13 @@ export function CoffeeBeanList({
               ${selectable && selectedBeanId === bean.id ? 'ring-2 ring-stone-500 bg-stone-50' : ''}
               ${selectable ? 'hover:ring-2 hover:ring-stone-300' : ''}
             `}
-            onClick={() => selectable && onSelect?.(bean)}
+            onClick={() => {
+              if (selectable) {
+                onSelect?.(bean)
+              } else if (onView && !selectable) {
+                onView(bean)
+              }
+            }}
           >
             <CardContent className="p-6">
               {/* Header */}
@@ -115,19 +123,23 @@ export function CoffeeBeanList({
 
               {/* Processing and Roast */}
               <div className="flex gap-2 mb-4">
-                <Badge className={`text-xs ${getProcessingColor(bean.processing)}`}>
-                  {bean.processing}
-                </Badge>
+                {bean.processing_method && (
+                  <Badge className={`text-xs ${getProcessingColor(bean.processing_method)}`}>
+                    {bean.processing_method}
+                  </Badge>
+                )}
                 <Badge className={`text-xs ${getRoastColor(bean.roast)}`}>
                   {bean.roast} roast
                 </Badge>
-                <Badge className={`text-xs ${getAcidityColor(bean.acidity)}`}>
-                  {bean.acidity} acidity
-                </Badge>
+                {bean.acidity && (
+                  <Badge className={`text-xs ${getAcidityColor(bean.acidity)}`}>
+                    {bean.acidity} acidity
+                  </Badge>
+                )}
               </div>
 
               {/* Flavor Notes */}
-              {bean.flavor_notes.length > 0 && (
+              {bean.flavor_notes && bean.flavor_notes.length > 0 && (
                 <div className="mb-4">
                   <p className="text-stone-700 text-sm font-medium mb-2">Flavor Notes:</p>
                   <div className="flex flex-wrap gap-1">
@@ -154,17 +166,17 @@ export function CoffeeBeanList({
                   </div>
                 )}
                 
-                {bean.quantity && (
+                {bean.quantity_g && (
                   <div className="flex items-center gap-2">
                     <Package className="w-4 h-4" />
-                    <span>{bean.quantity} {bean.quantity_unit}</span>
+                    <span>{bean.quantity_g} {bean.quantity_unit || 'g'}</span>
                   </div>
                 )}
                 
-                {bean.price && (
+                {bean.price_per_kg && (
                   <div className="flex items-center gap-2">
                     <DollarSign className="w-4 h-4" />
-                    <span>€{bean.price}</span>
+                    <span>€{bean.price_per_kg}/kg</span>
                   </div>
                 )}
                 

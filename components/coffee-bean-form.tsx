@@ -53,7 +53,7 @@ const quantityUnits = [
 export function CoffeeBeanForm({ onSave, onCancel, initialBean }: CoffeeBeanFormProps) {
   const [formData, setFormData] = useState<CreateCoffeeBeanData>({
     name: initialBean?.name || "",
-    processing: initialBean?.processing || "washed",
+    processing_method: initialBean?.processing_method || "washed",
     origin: initialBean?.origin || "",
     roast: initialBean?.roast || "medium",
     type: initialBean?.type || "single-origin",
@@ -61,9 +61,9 @@ export function CoffeeBeanForm({ onSave, onCancel, initialBean }: CoffeeBeanForm
     acidity: initialBean?.acidity || "medium",
     notes: initialBean?.notes || "",
     roast_date: initialBean?.roast_date || "",
-    quantity: initialBean?.quantity || undefined,
+    quantity_g: initialBean?.quantity_g || undefined,
     quantity_unit: initialBean?.quantity_unit || "g",
-    price: initialBean?.price || undefined,
+    price_per_kg: initialBean?.price_per_kg || undefined,
     currency: "EUR",
     supplier: initialBean?.supplier || "",
   })
@@ -87,10 +87,10 @@ export function CoffeeBeanForm({ onSave, onCancel, initialBean }: CoffeeBeanForm
   }
 
   const addFlavorNote = () => {
-    if (newFlavorNote.trim() && !formData.flavor_notes.includes(newFlavorNote.trim())) {
+    if (newFlavorNote.trim() && !(formData.flavor_notes || []).includes(newFlavorNote.trim())) {
       setFormData(prev => ({
         ...prev,
-        flavor_notes: [...prev.flavor_notes, newFlavorNote.trim()]
+        flavor_notes: [...(prev.flavor_notes || []), newFlavorNote.trim()]
       }))
       setNewFlavorNote("")
     }
@@ -99,7 +99,7 @@ export function CoffeeBeanForm({ onSave, onCancel, initialBean }: CoffeeBeanForm
   const removeFlavorNote = (note: string) => {
     setFormData(prev => ({
       ...prev,
-      flavor_notes: prev.flavor_notes.filter(n => n !== note)
+      flavor_notes: (prev.flavor_notes || []).filter(n => n !== note)
     }))
   }
 
@@ -162,8 +162,8 @@ export function CoffeeBeanForm({ onSave, onCancel, initialBean }: CoffeeBeanForm
               <div className="space-y-2">
                 <Label className="text-stone-700 font-medium">Processing Method</Label>
                 <Select 
-                  value={formData.processing} 
-                  onValueChange={(value: any) => setFormData(prev => ({ ...prev, processing: value }))}
+                  value={formData.processing_method} 
+                  onValueChange={(value: any) => setFormData(prev => ({ ...prev, processing_method: value }))}
                 >
                   <SelectTrigger className="border-stone-300 focus:border-stone-500 rounded-lg">
                     <SelectValue />
@@ -272,9 +272,9 @@ export function CoffeeBeanForm({ onSave, onCancel, initialBean }: CoffeeBeanForm
                 </Button>
               </div>
 
-              {formData.flavor_notes.length > 0 && (
+              {(formData.flavor_notes || []).length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {formData.flavor_notes.map((note, index) => (
+                  {(formData.flavor_notes || []).map((note, index) => (
                     <Badge
                       key={index}
                       variant="secondary"
@@ -298,15 +298,15 @@ export function CoffeeBeanForm({ onSave, onCancel, initialBean }: CoffeeBeanForm
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-2">
-                  <Label htmlFor="quantity" className="text-stone-700 font-medium">
-                    Quantity
+                  <Label htmlFor="quantity_g" className="text-stone-700 font-medium">
+                    Quantity (g)
                   </Label>
                   <Input
-                    id="quantity"
+                    id="quantity_g"
                     type="number"
                     step="0.1"
-                    value={formData.quantity || ""}
-                    onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value ? Number(e.target.value) : undefined }))}
+                    value={formData.quantity_g || ""}
+                    onChange={(e) => setFormData(prev => ({ ...prev, quantity_g: e.target.value ? Number(e.target.value) : undefined }))}
                     placeholder="250"
                     className="border-stone-300 focus:border-stone-500 rounded-lg"
                   />
@@ -332,15 +332,15 @@ export function CoffeeBeanForm({ onSave, onCancel, initialBean }: CoffeeBeanForm
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="price" className="text-stone-700 font-medium">
-                  Price (EUR)
+                <Label htmlFor="price_per_kg" className="text-stone-700 font-medium">
+                  Price per kg (EUR)
                 </Label>
                 <Input
-                  id="price"
+                  id="price_per_kg"
                   type="number"
                   step="0.01"
-                  value={formData.price || ""}
-                  onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value ? Number(e.target.value) : undefined }))}
+                  value={formData.price_per_kg || ""}
+                  onChange={(e) => setFormData(prev => ({ ...prev, price_per_kg: e.target.value ? Number(e.target.value) : undefined }))}
                   placeholder="25.00"
                   className="border-stone-300 focus:border-stone-500 rounded-lg"
                 />

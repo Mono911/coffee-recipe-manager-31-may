@@ -21,6 +21,7 @@ import { RecipeSearch } from "@/components/recipe-search"
 import { BrewingTimer } from "@/components/brewing-timer"
 import { CoffeeBeanForm } from "@/components/coffee-bean-form"
 import { CoffeeBeanList } from "@/components/coffee-bean-list"
+import { CoffeeBeanDetail } from "@/components/coffee-bean-detail"
 import type { Recipe } from "@/types/recipe"
 import type { CoffeeBean } from "@/types/coffee-bean"
 import { RecipeStorage } from "@/lib/recipe-storage"
@@ -30,8 +31,9 @@ export default function CoffeeRecipeManager() {
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([])
   const [coffeeBeans, setCoffeeBeans] = useState<CoffeeBean[]>([])
-  const [currentView, setCurrentView] = useState<"list" | "create" | "detail" | "brewing" | "beans" | "create-bean">("list")
+  const [currentView, setCurrentView] = useState<"list" | "create" | "detail" | "brewing" | "beans" | "create-bean" | "bean-detail">("list")
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null)
+  const [selectedBean, setSelectedBean] = useState<CoffeeBean | null>(null)
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null)
   const [brewingRecipe, setBrewingRecipe] = useState<Recipe | null>(null)
   const [editingBean, setEditingBean] = useState<CoffeeBean | null>(null)
@@ -189,6 +191,11 @@ export default function CoffeeRecipeManager() {
     setCurrentView("create-bean")
   }
 
+  const handleViewBean = (bean: CoffeeBean) => {
+    setSelectedBean(bean)
+    setCurrentView("bean-detail")
+  }
+
   const handleDuplicateRecipe = (recipe: Recipe) => {
     // Create a copy of the recipe without id and timestamps
     const duplicatedRecipe: Recipe = {
@@ -226,7 +233,14 @@ export default function CoffeeRecipeManager() {
     <div className="min-h-screen bg-gradient-to-br from-stone-50 via-amber-50 to-emerald-50">
       <div className="max-w-6xl mx-auto p-4 sm:p-6">
         <header className="text-center mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-4xl font-bold text-stone-800 mb-2 sm:mb-3 font-rounded">☕ Brew Journal</h1>
+          <div className="flex items-center justify-center mb-2 sm:mb-3">
+            <img 
+              src="/Jul Coffee logo.png" 
+              alt="Jul Coffee Logo" 
+              className="h-16 sm:h-24 w-auto mr-3"
+            />
+            <h1 className="text-2xl sm:text-4xl font-bold text-stone-800 font-rounded">Brew Journal</h1>
+          </div>
           <p className="text-stone-600 text-sm sm:text-lg">Perfect your craft, one cup at a time</p>
         </header>
         
@@ -381,6 +395,7 @@ export default function CoffeeRecipeManager() {
                 beans={coffeeBeans}
                 onEdit={handleEditBean}
                 onDelete={handleDeleteBean}
+                onView={handleViewBean}
               />
             </div>
           )}
@@ -413,6 +428,31 @@ export default function CoffeeRecipeManager() {
                     setCurrentView("beans")
                     setEditingBean(null)
                   }}
+                />
+              </div>
+            )}
+
+            {currentView === "bean-detail" && selectedBean && (
+              <div
+                key="bean-detail"
+                className="space-y-4 sm:space-y-6"
+              >
+                <Button
+                  variant="ghost"
+                  onClick={() => setCurrentView("beans")}
+                  className="text-stone-600 hover:text-stone-800 hover:bg-stone-100 rounded-xl"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
+                  {isMobile ? "Back" : "Back to Beans"}
+                </Button>
+                <CoffeeBeanDetail
+                  bean={selectedBean}
+                  onEdit={() => handleEditBean(selectedBean)}
+                  onDelete={() => {
+                    handleDeleteBean(selectedBean.id)
+                    setCurrentView("beans")
+                  }}
+                  onBack={() => setCurrentView("beans")}
                 />
               </div>
             )}

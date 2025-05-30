@@ -28,12 +28,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <link rel="icon" href="/Jul coffee logo favicon .png" type="image/png" />
+        <link rel="apple-touch-icon" href="/Jul coffee logo favicon .png" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#78716c" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Brew Journal" />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body>
